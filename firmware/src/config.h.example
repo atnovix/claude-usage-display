@@ -1,0 +1,14 @@
+#pragma once
+
+// WiFi instellingen
+#define WIFI_SSID     "jouw-netwerk-naam"
+#define WIFI_PASSWORD "jouw-wifi-wachtwoord"
+
+// Lokale server (je PC op hetzelfde netwerk)
+// Pas het IP aan naar het IP van je PC (zie: ipconfig)
+#define SERVER_HOST   "192.168.1.100"
+#define SERVER_PORT   8765
+#define SERVER_PATH   "/usage"
+
+// Hoe vaak pollen in milliseconden (15s)
+#define POLL_INTERVAL_MS (15 * 1000)

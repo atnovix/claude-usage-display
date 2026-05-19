@@ -1,0 +1,16 @@
+# Gevoelige bestanden — nooit committen
+firmware/src/config.h
+server/claude_cookie.txt
+server/usage_override.json
+
+# PlatformIO build output
+firmware/.pio/
+
+# Python
+__pycache__/
+*.pyc
+server/__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
