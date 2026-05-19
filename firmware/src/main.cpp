@@ -64,18 +64,18 @@ void draw_session() {
 
     // Titel
     tft.setTextColor(COLOR_TITLE, COLOR_BG);
-    tft.drawString("Claude Sessie", tft.width() / 2, 5, 2);
+    tft.drawString("Claude Session", tft.width() / 2, 5, 2);
 
     if (full) {
         tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("LIMIET BEREIKT", tft.width() / 2, 32, 2);
+        tft.drawString("LIMIT REACHED", tft.width() / 2, 32, 2);
 
         char countdown[16];
         fmt_countdown(remaining_sec(), countdown, sizeof(countdown));
         tft.drawString(countdown, tft.width() / 2, 55, 6);
 
         tft.setTextColor(COLOR_DIM, COLOR_BG);
-        tft.drawString("tot reset", tft.width() / 2, 108, 1);
+        tft.drawString("until reset", tft.width() / 2, 108, 1);
     } else {
         // Groot percentage
         char pct_str[8];
@@ -93,17 +93,17 @@ void draw_session() {
     // Subtekst: beide waarden
     tft.setTextColor(COLOR_DIM, COLOR_BG);
     char sub[48];
-    snprintf(sub, sizeof(sub), "Sessie %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
+    snprintf(sub, sizeof(sub), "Session %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
     tft.drawString(sub, tft.width() / 2, 112, 1);
 
     // Status
     tft.setTextDatum(BC_DATUM);
     if (!g_wifi_ok) {
         tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("Geen WiFi", tft.width() / 2, tft.height() - 1, 1);
+        tft.drawString("No WiFi", tft.width() / 2, tft.height() - 1, 1);
     } else if (!g_fetch_ok) {
         tft.setTextColor(COLOR_MID, COLOR_BG);
-        tft.drawString("Server niet bereikbaar", tft.width() / 2, tft.height() - 1, 1);
+        tft.drawString("Server unavailable", tft.width() / 2, tft.height() - 1, 1);
     } else {
         tft.setTextColor(COLOR_DIM, COLOR_BG);
         tft.drawString("OK", tft.width() / 2, tft.height() - 1, 1);
@@ -118,10 +118,10 @@ void draw_overview() {
     // Titel
     tft.setTextColor(COLOR_TITLE, COLOR_BG);
     tft.setTextDatum(TC_DATUM);
-    tft.drawString("Overzicht", tft.width() / 2, 5, 2);
+    tft.drawString("Overview", tft.width() / 2, 5, 2);
 
     struct { const char* label; float pct; } rows[4] = {
-        {"Sessie",  g_session_pct},
+        {"Session", g_session_pct},
         {"Week",    g_weekly_pct},
         {"Design",  g_design_pct},
         {"Credits", g_credits_pct},
@@ -154,7 +154,7 @@ void draw_overview() {
         snprintf(pb, sizeof(pb), "%.0f%%", pct);
         tft.setTextColor(bar_color(pct), COLOR_BG);
         tft.setTextDatum(MR_DATUM);
-        tft.drawString(pb, 236, cy, 1);
+        tft.drawString(pb, 226, cy, 1);
     }
 
     // Credits bedrag onderin
@@ -167,7 +167,7 @@ void draw_overview() {
         tft.drawString(cb, tft.width() / 2, tft.height() - 1, 1);
     } else if (!g_wifi_ok) {
         tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("Geen WiFi", tft.width() / 2, tft.height() - 1, 1);
+        tft.drawString("No WiFi", tft.width() / 2, tft.height() - 1, 1);
     }
 }
 
@@ -243,7 +243,7 @@ void setup() {
     tft.fillScreen(COLOR_BG);
     tft.setTextDatum(TC_DATUM);
     tft.setTextColor(COLOR_TITLE, COLOR_BG);
-    tft.drawString("Verbinden...", tft.width() / 2, 60, 2);
+    tft.drawString("Connecting...", tft.width() / 2, 60, 2);
 
     connect_wifi();
     fetch_usage();
