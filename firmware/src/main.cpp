@@ -5,7 +5,8 @@
 #include <TFT_eSPI.h>
 #include "config.h"
 
-TFT_eSPI tft = TFT_eSPI();
+TFT_eSPI    tft = TFT_eSPI();
+TFT_eSprite spr = TFT_eSprite(&tft);
 
 #define BTN1_PIN     35
 #define BTN2_PIN     0
@@ -70,67 +71,66 @@ void draw_session() {
     float pct  = g_session_pct;
     bool  full = (pct >= 99.5f);
 
-    tft.fillScreen(COLOR_BG);
-    tft.setTextDatum(TC_DATUM);
+    spr.fillScreen(COLOR_BG);
+    spr.setTextDatum(TC_DATUM);
 
-    // Titel
-    tft.setTextColor(COLOR_TITLE, COLOR_BG);
-    tft.drawString("Claude Session", tft.width() / 2, 5, 2);
+    spr.setTextColor(COLOR_TITLE, COLOR_BG);
+    spr.drawString("Claude Session", tft.width() / 2, 5, 2);
 
     if (full) {
-        tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("LIMIT REACHED", tft.width() / 2, 26, 2);
+        spr.setTextColor(COLOR_HIGH, COLOR_BG);
+        spr.drawString("LIMIT REACHED", tft.width() / 2, 26, 2);
 
         char countdown[16];
         fmt_countdown(remaining_sec(), countdown, sizeof(countdown));
-        tft.drawString(countdown, tft.width() / 2, 48, 6);  // font 6: alleen digits + colon
+        spr.drawString(countdown, tft.width() / 2, 48, 6);
 
-        tft.setTextColor(COLOR_DIM, COLOR_BG);
-        tft.drawString("until reset", tft.width() / 2, 100, 1);
+        spr.setTextColor(COLOR_DIM, COLOR_BG);
+        spr.drawString("until reset", tft.width() / 2, 100, 1);
 
         char sub[48];
         snprintf(sub, sizeof(sub), "Session %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
-        tft.drawString(sub, tft.width() / 2, 112, 1);
+        spr.drawString(sub, tft.width() / 2, 112, 1);
     } else {
         char pct_str[8];
         snprintf(pct_str, sizeof(pct_str), "%.0f%%", pct);
-        tft.setTextColor(bar_color(pct), COLOR_BG);
-        tft.drawString(pct_str, tft.width() / 2, 32, 6);
+        spr.setTextColor(bar_color(pct), COLOR_BG);
+        spr.drawString(pct_str, tft.width() / 2, 32, 6);
 
         int bx = 10, by = 90, bw = tft.width() - 20, bh = 14;
-        tft.fillRoundRect(bx, by, bw, bh, 4, COLOR_BAR_BG);
+        spr.fillRoundRect(bx, by, bw, bh, 4, COLOR_BAR_BG);
         int fw = (int)(pct / 100.0f * bw);
-        if (fw > 0) tft.fillRoundRect(bx, by, fw, bh, 4, bar_color(pct));
+        if (fw > 0) spr.fillRoundRect(bx, by, fw, bh, 4, bar_color(pct));
 
-        tft.setTextColor(COLOR_DIM, COLOR_BG);
+        spr.setTextColor(COLOR_DIM, COLOR_BG);
         char sub[48];
         snprintf(sub, sizeof(sub), "Session %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
-        tft.drawString(sub, tft.width() / 2, 112, 1);
+        spr.drawString(sub, tft.width() / 2, 112, 1);
     }
 
-    // Status
-    tft.setTextDatum(BC_DATUM);
+    spr.setTextDatum(BC_DATUM);
     if (!g_wifi_ok) {
-        tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("No WiFi", tft.width() / 2, tft.height() - 1, 1);
+        spr.setTextColor(COLOR_HIGH, COLOR_BG);
+        spr.drawString("No WiFi", tft.width() / 2, tft.height() - 1, 1);
     } else if (!g_fetch_ok) {
-        tft.setTextColor(COLOR_MID, COLOR_BG);
-        tft.drawString("Server unavailable", tft.width() / 2, tft.height() - 1, 1);
+        spr.setTextColor(COLOR_MID, COLOR_BG);
+        spr.drawString("Server unavailable", tft.width() / 2, tft.height() - 1, 1);
     } else {
-        tft.setTextColor(COLOR_DIM, COLOR_BG);
-        tft.drawString("OK", tft.width() / 2, tft.height() - 1, 1);
+        spr.setTextColor(COLOR_DIM, COLOR_BG);
+        spr.drawString("OK", tft.width() / 2, tft.height() - 1, 1);
     }
+
+    spr.pushSprite(0, 0);
 }
 
 // ── pagina 1: overzicht ───────────────────────────────────────────────────────
 
 void draw_overview() {
-    tft.fillScreen(COLOR_BG);
+    spr.fillScreen(COLOR_BG);
 
-    // Titel
-    tft.setTextColor(COLOR_TITLE, COLOR_BG);
-    tft.setTextDatum(TC_DATUM);
-    tft.drawString("Overview", tft.width() / 2, 5, 2);
+    spr.setTextColor(COLOR_TITLE, COLOR_BG);
+    spr.setTextDatum(TC_DATUM);
+    spr.drawString("Overview", tft.width() / 2, 5, 2);
 
     struct { const char* label; float pct; } rows[4] = {
         {"Session", g_session_pct},
@@ -151,36 +151,34 @@ void draw_overview() {
         float pct  = rows[i].pct;
         int   fill = (int)(pct / 100.0f * bar_w);
 
-        // Label
-        tft.setTextColor(COLOR_DIM, COLOR_BG);
-        tft.setTextDatum(ML_DATUM);
-        tft.drawString(rows[i].label, 4, cy, 1);
+        spr.setTextColor(COLOR_DIM, COLOR_BG);
+        spr.setTextDatum(ML_DATUM);
+        spr.drawString(rows[i].label, 4, cy, 1);
 
-        // Bar
-        tft.fillRoundRect(bar_x, ry + (row_h - bar_h) / 2, bar_w, bar_h, 3, COLOR_BAR_BG);
+        spr.fillRoundRect(bar_x, ry + (row_h - bar_h) / 2, bar_w, bar_h, 3, COLOR_BAR_BG);
         if (fill > 0)
-            tft.fillRoundRect(bar_x, ry + (row_h - bar_h) / 2, fill, bar_h, 3, bar_color(pct));
+            spr.fillRoundRect(bar_x, ry + (row_h - bar_h) / 2, fill, bar_h, 3, bar_color(pct));
 
-        // Percentage
         char pb[8];
         snprintf(pb, sizeof(pb), "%.0f%%", pct);
-        tft.setTextColor(bar_color(pct), COLOR_BG);
-        tft.setTextDatum(MR_DATUM);
-        tft.drawString(pb, 226, cy, 1);
+        spr.setTextColor(bar_color(pct), COLOR_BG);
+        spr.setTextDatum(MR_DATUM);
+        spr.drawString(pb, 226, cy, 1);
     }
 
-    // Credits bedrag onderin
-    tft.setTextDatum(BC_DATUM);
+    spr.setTextDatum(BC_DATUM);
     if (g_credits_limit > 0) {
-        tft.setTextColor(COLOR_DIM, COLOR_BG);
+        spr.setTextColor(COLOR_DIM, COLOR_BG);
         char cb[32];
         snprintf(cb, sizeof(cb), "%s %d / %d",
                  g_credits_currency, g_credits_used, g_credits_limit);
-        tft.drawString(cb, tft.width() / 2, tft.height() - 1, 1);
+        spr.drawString(cb, tft.width() / 2, tft.height() - 1, 1);
     } else if (!g_wifi_ok) {
-        tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("No WiFi", tft.width() / 2, tft.height() - 1, 1);
+        spr.setTextColor(COLOR_HIGH, COLOR_BG);
+        spr.drawString("No WiFi", tft.width() / 2, tft.height() - 1, 1);
     }
+
+    spr.pushSprite(0, 0);
 }
 
 // ── router ────────────────────────────────────────────────────────────────────
@@ -253,6 +251,7 @@ void setup() {
 
     tft.init();
     tft.setRotation(1);
+    spr.createSprite(tft.width(), tft.height());
     tft.fillScreen(COLOR_BG);
     tft.setTextDatum(TC_DATUM);
     tft.setTextColor(COLOR_TITLE, COLOR_BG);
