@@ -7,7 +7,8 @@
 
 TFT_eSPI tft = TFT_eSPI();
 
-#define BTN_PIN      35
+#define BTN1_PIN     35
+#define BTN2_PIN     0
 
 #define COLOR_BG     TFT_BLACK
 #define COLOR_TITLE  TFT_WHITE
@@ -49,11 +50,21 @@ uint32_t remaining_sec() {
 
 void fmt_countdown(uint32_t sec, char* buf, size_t sz) {
     uint32_t h = sec / 3600, m = (sec % 3600) / 60, s = sec % 60;
-    if (h > 0) snprintf(buf, sz, "%uu %02um", h, m);
+    if (h > 0) snprintf(buf, sz, "%u:%02u:%02u", h, m, s);  // font 6 supports digits + colon
     else        snprintf(buf, sz, "%02u:%02u", m, s);
 }
 
 // ── pagina 0: sessie ──────────────────────────────────────────────────────────
+
+// Alleen de countdown-cijfers hertekenen zonder fillScreen (voorkomt flicker)
+void update_countdown() {
+    char countdown[16];
+    fmt_countdown(remaining_sec(), countdown, sizeof(countdown));
+    tft.fillRect(0, 48, tft.width(), 52, COLOR_BG);  // wis alleen het cijfergebied
+    tft.setTextColor(COLOR_HIGH, COLOR_BG);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString(countdown, tft.width() / 2, 48, 6);
+}
 
 void draw_session() {
     float pct  = g_session_pct;
@@ -68,33 +79,34 @@ void draw_session() {
 
     if (full) {
         tft.setTextColor(COLOR_HIGH, COLOR_BG);
-        tft.drawString("LIMIT REACHED", tft.width() / 2, 32, 2);
+        tft.drawString("LIMIT REACHED", tft.width() / 2, 26, 2);
 
         char countdown[16];
         fmt_countdown(remaining_sec(), countdown, sizeof(countdown));
-        tft.drawString(countdown, tft.width() / 2, 55, 6);
+        tft.drawString(countdown, tft.width() / 2, 48, 6);  // font 6: alleen digits + colon
 
         tft.setTextColor(COLOR_DIM, COLOR_BG);
-        tft.drawString("until reset", tft.width() / 2, 108, 1);
+        tft.drawString("until reset", tft.width() / 2, 100, 1);
+
+        char sub[48];
+        snprintf(sub, sizeof(sub), "Session %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
+        tft.drawString(sub, tft.width() / 2, 112, 1);
     } else {
-        // Groot percentage
         char pct_str[8];
         snprintf(pct_str, sizeof(pct_str), "%.0f%%", pct);
         tft.setTextColor(bar_color(pct), COLOR_BG);
         tft.drawString(pct_str, tft.width() / 2, 32, 6);
 
-        // Progress bar
-        int bx = 10, by = 92, bw = tft.width() - 20, bh = 14;
+        int bx = 10, by = 90, bw = tft.width() - 20, bh = 14;
         tft.fillRoundRect(bx, by, bw, bh, 4, COLOR_BAR_BG);
         int fw = (int)(pct / 100.0f * bw);
         if (fw > 0) tft.fillRoundRect(bx, by, fw, bh, 4, bar_color(pct));
-    }
 
-    // Subtekst: beide waarden
-    tft.setTextColor(COLOR_DIM, COLOR_BG);
-    char sub[48];
-    snprintf(sub, sizeof(sub), "Session %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
-    tft.drawString(sub, tft.width() / 2, 112, 1);
+        tft.setTextColor(COLOR_DIM, COLOR_BG);
+        char sub[48];
+        snprintf(sub, sizeof(sub), "Session %.0f%%   Week %.0f%%", g_session_pct, g_weekly_pct);
+        tft.drawString(sub, tft.width() / 2, 112, 1);
+    }
 
     // Status
     tft.setTextDatum(BC_DATUM);
@@ -234,7 +246,8 @@ void fetch_usage() {
 
 void setup() {
     Serial.begin(115200);
-    pinMode(BTN_PIN, INPUT_PULLUP);
+    pinMode(BTN1_PIN, INPUT_PULLUP);
+    pinMode(BTN2_PIN, INPUT_PULLUP);
     pinMode(TFT_BL, OUTPUT);
     digitalWrite(TFT_BL, HIGH);
 
@@ -254,18 +267,21 @@ void setup() {
 void loop() {
     unsigned long now = millis();
 
-    // Knop: wissel pagina
-    static bool btn_prev = HIGH;
-    bool btn_now = digitalRead(BTN_PIN);
-    if (btn_prev == HIGH && btn_now == LOW) {
+    // Beide knoppen wisselen de pagina
+    static bool btn1_prev = HIGH, btn2_prev = HIGH;
+    bool btn1_now = digitalRead(BTN1_PIN);
+    bool btn2_now = digitalRead(BTN2_PIN);
+    if ((btn1_prev == HIGH && btn1_now == LOW) ||
+        (btn2_prev == HIGH && btn2_now == LOW)) {
         delay(40);
-        if (digitalRead(BTN_PIN) == LOW) {
+        if (digitalRead(BTN1_PIN) == LOW || digitalRead(BTN2_PIN) == LOW) {
             g_view = 1 - g_view;
             draw_screen();
             g_last_draw = now;
         }
     }
-    btn_prev = btn_now;
+    btn1_prev = btn1_now;
+    btn2_prev = btn2_now;
 
     if (WiFi.status() != WL_CONNECTED) connect_wifi();
 
@@ -276,9 +292,9 @@ void loop() {
         g_last_draw = now;
     }
 
-    // Afteller hertekenen elke seconde bij 100%
+    // Afteller: alleen de cijfers hertekenen (geen flicker)
     if (g_view == 0 && g_session_pct >= 99.5f && now - g_last_draw >= 1000) {
-        draw_screen();
+        update_countdown();
         g_last_draw = now;
     }
 
