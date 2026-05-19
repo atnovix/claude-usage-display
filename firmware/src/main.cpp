@@ -69,16 +69,11 @@ void draw_countdown_on(TFT_eSPI& canvas, uint32_t sec) {
         int tw = canvas.textWidth(buf, 6);
         canvas.setTextDatum(TL_DATUM);
         canvas.drawString("h", tft.width() / 2 + tw / 2 + 3, 78, 2);
+        canvas.setTextDatum(TC_DATUM);  // restore so callers don't inherit TL_DATUM
     }
 }
 
 // ── pagina 0: sessie ──────────────────────────────────────────────────────────
-
-// Partial refresh: only the countdown area (no fillScreen → no flicker)
-void update_countdown() {
-    tft.fillRect(0, 48, tft.width(), 52, COLOR_BG);
-    draw_countdown_on(tft, remaining_sec());
-}
 
 void draw_session() {
     float pct  = g_session_pct;
@@ -302,9 +297,9 @@ void loop() {
         g_last_draw = now;
     }
 
-    // Afteller: alleen de cijfers hertekenen (geen flicker)
+    // Refresh countdown every second at 100% — sprite push is atomic, no flicker
     if (g_view == 0 && g_session_pct >= 99.5f && now - g_last_draw >= 1000) {
-        update_countdown();
+        draw_screen();
         g_last_draw = now;
     }
 
