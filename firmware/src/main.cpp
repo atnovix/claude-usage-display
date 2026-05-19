@@ -51,20 +51,33 @@ uint32_t remaining_sec() {
 
 void fmt_countdown(uint32_t sec, char* buf, size_t sz) {
     uint32_t h = sec / 3600, m = (sec % 3600) / 60, s = sec % 60;
-    if (h > 0) snprintf(buf, sz, "%u:%02u", h, m);   // H:MM — seconds irrelevant at this scale
+    if (h > 0) snprintf(buf, sz, "%u:%02u", h, m);
     else        snprintf(buf, sz, "%02u:%02u", m, s);
+}
+
+// Draw the large countdown + small 'h' suffix (hours only) onto any canvas.
+// TFT_eSprite inherits TFT_eSPI so both spr and tft work here.
+void draw_countdown_on(TFT_eSPI& canvas, uint32_t sec) {
+    char buf[16];
+    fmt_countdown(sec, buf, sizeof(buf));
+
+    canvas.setTextColor(COLOR_HIGH, COLOR_BG);
+    canvas.setTextDatum(TC_DATUM);
+    canvas.drawString(buf, tft.width() / 2, 48, 6);
+
+    if (sec >= 3600) {
+        int tw = canvas.textWidth(buf, 6);
+        canvas.setTextDatum(TL_DATUM);
+        canvas.drawString("h", tft.width() / 2 + tw / 2 + 3, 78, 2);
+    }
 }
 
 // ── pagina 0: sessie ──────────────────────────────────────────────────────────
 
-// Alleen de countdown-cijfers hertekenen zonder fillScreen (voorkomt flicker)
+// Partial refresh: only the countdown area (no fillScreen → no flicker)
 void update_countdown() {
-    char countdown[16];
-    fmt_countdown(remaining_sec(), countdown, sizeof(countdown));
-    tft.fillRect(0, 48, tft.width(), 52, COLOR_BG);  // wis alleen het cijfergebied
-    tft.setTextColor(COLOR_HIGH, COLOR_BG);
-    tft.setTextDatum(TC_DATUM);
-    tft.drawString(countdown, tft.width() / 2, 48, 6);
+    tft.fillRect(0, 48, tft.width(), 52, COLOR_BG);
+    draw_countdown_on(tft, remaining_sec());
 }
 
 void draw_session() {
@@ -81,9 +94,7 @@ void draw_session() {
         spr.setTextColor(COLOR_HIGH, COLOR_BG);
         spr.drawString("LIMIT REACHED", tft.width() / 2, 26, 2);
 
-        char countdown[16];
-        fmt_countdown(remaining_sec(), countdown, sizeof(countdown));
-        spr.drawString(countdown, tft.width() / 2, 48, 6);
+        draw_countdown_on(spr, remaining_sec());
 
         spr.setTextColor(COLOR_DIM, COLOR_BG);
         spr.drawString("until reset", tft.width() / 2, 100, 1);
