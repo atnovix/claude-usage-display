@@ -51,7 +51,7 @@ uint32_t remaining_sec() {
 
 void fmt_countdown(uint32_t sec, char* buf, size_t sz) {
     uint32_t h = sec / 3600, m = (sec % 3600) / 60, s = sec % 60;
-    if (h > 0) snprintf(buf, sz, "%u:%02u:%02u", h, m, s);  // font 6 supports digits + colon
+    if (h > 0) snprintf(buf, sz, "%u:%02u", h, m);   // H:MM — seconds irrelevant at this scale
     else        snprintf(buf, sz, "%02u:%02u", m, s);
 }
 
