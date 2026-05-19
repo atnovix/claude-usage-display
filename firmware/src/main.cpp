@@ -75,6 +75,12 @@ void draw_countdown_on(TFT_eSPI& canvas, uint32_t sec) {
 
 // ── pagina 0: sessie ──────────────────────────────────────────────────────────
 
+// Targeted refresh for the countdown digits only — no full clear needed.
+void update_countdown() {
+    tft.fillRect(0, 48, tft.width(), 52, COLOR_BG);
+    draw_countdown_on(tft, remaining_sec());
+}
+
 void draw_session() {
     float pct  = g_session_pct;
     bool  full = (pct >= 99.5f);
@@ -190,6 +196,7 @@ void draw_overview() {
 // ── router ────────────────────────────────────────────────────────────────────
 
 void draw_screen() {
+    tft.fillScreen(COLOR_BG);   // hard clear — guarantees no ghost pixels survive
     if (g_view == 0) draw_session();
     else             draw_overview();
 }
@@ -257,6 +264,7 @@ void setup() {
 
     tft.init();
     tft.setRotation(1);
+    spr.setColorDepth(16);
     spr.createSprite(tft.width(), tft.height());
     tft.fillScreen(COLOR_BG);
     tft.setTextDatum(TC_DATUM);
@@ -297,9 +305,9 @@ void loop() {
         g_last_draw = now;
     }
 
-    // Refresh countdown every second at 100% — sprite push is atomic, no flicker
+    // Countdown: targeted fillRect refresh — avoids full clear every second
     if (g_view == 0 && g_session_pct >= 99.5f && now - g_last_draw >= 1000) {
-        draw_screen();
+        update_countdown();
         g_last_draw = now;
     }
 
