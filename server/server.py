@@ -16,6 +16,7 @@ Databronnen (volgorde):
 import os
 import json
 import time
+from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 try:
@@ -79,9 +80,33 @@ def fetch_from_claude_ai() -> dict:
         raise RuntimeError(f"claude.ai fout {resp.status_code}: {resp.text[:200]}")
 
     body = resp.json()
-    pct  = float(body.get("five_hour", {}).get("utilization", 0.0))
-    used = int(pct / 100.0 * 1_000_000)
-    return {"percentage": round(pct, 1), "used": used, "limit": 1_000_000}
+    fh   = body.get("five_hour",       {}) or {}
+    sd   = body.get("seven_day",       {}) or {}
+    des  = body.get("seven_day_omelette", {}) or {}
+    xu   = body.get("extra_usage",     {}) or {}
+    now  = datetime.now(timezone.utc)
+
+    def resets_in(block: dict) -> int:
+        ts = block.get("resets_at")
+        if not ts:
+            return 0
+        try:
+            t = datetime.fromisoformat(ts)
+            return max(0, int((t - now).total_seconds()))
+        except Exception:
+            return 0
+
+    return {
+        "percentage":          round(float(fh.get("utilization", 0.0)), 1),
+        "weekly":              round(float(sd.get("utilization", 0.0)), 1),
+        "design":              round(float(des.get("utilization", 0.0)), 1),
+        "credits_pct":         round(float(xu.get("utilization", 0.0)), 1),
+        "credits_used":        int(xu.get("used_credits", 0) or 0),
+        "credits_limit":       int(xu.get("monthly_limit", 0) or 0),
+        "credits_currency":    xu.get("currency", ""),
+        "session_resets_in":   resets_in(fh),
+        "weekly_resets_in":    resets_in(sd),
+    }
 
 
 def read_override() -> dict | None:
